@@ -12,8 +12,12 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
+import androidx.core.math.MathUtils;
 import rubikstudio.library.model.LuckyItem;
 
 /**
@@ -35,6 +39,8 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
     private ImageView ivCursorView;
 
     private LuckyRoundItemSelectedListener mLuckyRoundItemSelectedListener;
+
+    private ArrayList<Float> listRatio;
 
     @Override
     public void rotateDone(int index) {
@@ -163,6 +169,39 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
         pielView.setData(data);
     }
 
+    public void setRatio(List<Float> data) {
+        if (listRatio == null) {
+            listRatio = new ArrayList<>();
+        }
+        listRatio.clear();
+        listRatio.addAll(data);
+    }
+
+    private int calculateItemIndexByRatio() {
+        float[] prefix = new float[listRatio.size()];
+        prefix[0] = listRatio.get(0);
+        for (int i = 1; i < listRatio.size(); ++i) {
+            prefix[i] = prefix[i - 1] + listRatio.get(i);
+        }
+        float ranValue = (new Random()).nextFloat() * prefix[listRatio.size() - 1];
+        return findCeil(prefix, ranValue, 0, listRatio.size());
+    }
+
+    private int findCeil(float arr[], float r, int l, int h)
+    {
+        int mid;
+        while (l < h)
+        {
+            mid = l + ((h - l) >> 1); // Same as mid = (l+h)/2
+            if(r > arr[mid])
+                l = mid + 1;
+            else
+                h = mid;
+        }
+        return (arr[l] >= r) ? l : -1;
+    }
+
+
     /**
      * @param numberOfRound
      */
@@ -183,6 +222,12 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
     
     public void startLuckyWheelWithRandomTarget() {
         Random r = new Random();
-        pielView.rotateTo(r.nextInt(pielView.getLuckyItemListSize() - 1));
+        int index = calculateItemIndexByRatio();
+        if (index < 0) {
+            index = 0;
+        }
+
+        pielView.rotateTo(index);
     }
+
 }
